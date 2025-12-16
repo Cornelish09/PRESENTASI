@@ -85,6 +85,20 @@ structify-music/
 Structify Music memakai **Hybrid Storage**: relasional untuk entitas yang butuh integritas relasi + file-based untuk simulasi library lagu seperti sistem legacy.
 
 ### 1) Relational Database (SQLite)
+
+Digunakan untuk data yang membutuhkan struktur hubungan (relasi) yang rapi dan fitur query yang kompleks.
+
+Teknologi: SQLite (diakses via library Flask-SQLAlchemy).
+
+File Fisik: vibestream.db (akan dibuat otomatis oleh app.py).
+
+Data yang Disimpan:
+
+Tabel Album: Menyimpan data album (Judul, Artis, Tahun) dan relasi ke lagu-lagu di dalamnya.
+
+Tabel Artist: Menyimpan profil artis (Nama, Bio, Avatar, Status Verified).
+
+Tabel PublicPlaylist: Menyimpan playlist yang dibuat oleh Admin (agar bisa dilihat semua orang).
 Untuk data dengan relasi kuat & integritas data.
 - Implementasi: `Flask-SQLAlchemy`
 - Entitas: `Album`, `Artist`, `PublicPlaylist` (Playlist Admin)
