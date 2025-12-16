@@ -1,101 +1,164 @@
-Tentu, ini adalah konten lengkap dokumentasi teknis **Structify Music**. Anda bisa menyalin seluruh teks di dalam blok kode di bawah ini, lalu simpan sebagai file dengan nama `README.md` atau `TECHNICAL_DOCS.md`.
+# 🎵 Structify Music — Technical Documentation
 
-```markdown
-# 🎵 Structify Music - Technical Documentation
-
-**Structify Music** adalah aplikasi pemutar musik modern berbasis web yang dirancang untuk memenuhi tugas besar mata kuliah Struktur Data. Aplikasi ini menggabungkan struktur data klasik (Linked List, Queue) dengan antarmuka pengguna yang interaktif dan fitur cerdas.
-
-Dokumen ini menjelaskan arsitektur teknis, mekanisme penyimpanan, serta algoritma yang digunakan dalam pengembangan aplikasi.
+Structify Music adalah aplikasi pemutar musik modern berbasis web untuk tugas besar **Struktur Data**. Fokus utamanya: penerapan struktur data klasik (**Doubly Linked List**, **Queue**) + UI interaktif + fitur cerdas (search toleran typo & rekomendasi lagu).
 
 ---
 
-## 🏗️ Arsitektur & Penyimpanan (Storage)
-
-Structify Music menggunakan pendekatan **Hybrid Storage** untuk menyeimbangkan kebutuhan integritas data relasional dan efisiensi operasi file.
-
-### 1. Database Relasional (SQLite)
-Digunakan untuk data entitas yang memerlukan relasi kuat dan integritas data.
-* **Implementasi:** `Flask-SQLAlchemy`
-* **Data:** `Album`, `Artist`, `PublicPlaylist` (Playlist Admin)
-* **File:** `vibestream.db` *(Default configuration)*
-
-### 2. File-Based Storage (CSV)
-Digunakan sebagai simulasi *repository* file untuk Library Lagu utama, meniru sistem *legacy* atau pengelolaan file datar.
-* **Implementasi:** Modul `csv` Python
-* **Data:** Metadata Lagu (Judul, Artis, Genre, File Path, Nayara Key)
-* **File:** `data/songs.csv`
-
-### 3. Static File System
-Penyimpanan aset media fisik yang diakses langsung oleh browser.
-* **Audio:** `static/audio/` (.mp3)
-* **Covers:** `static/covers/` (.jpg/.png)
-
-### 4. Client-Side Storage (LocalStorage)
-Digunakan untuk menyimpan preferensi pengguna dan playlist pribadi secara lokal di browser pengguna (tanpa membebani server database untuk sesi sementara).
-* **Data:** `userPlaylists` (Playlist User), `musicHistory` (Riwayat putar), `vibestream_saved_collection`.
+## 📌 Table of Contents
+- [Quick Start](#-quick-start)
+- [Project Structure](#-project-structure)
+- [Architecture & Storage](#️-architecture--storage)
+- [Algorithms & Data Structures](#-algorithms--data-structures)
+- [Key Features](#-key-features)
+- [API Overview](#-api-overview)
+- [Tech Stack](#-tech-stack)
 
 ---
 
-## 🧠 Algoritma & Struktur Data
+## 🚀 Quick Start
 
-Inti dari Structify Music adalah penerapan struktur data yang efisien untuk menangani operasi pemutar musik.
+### Prerequisites
+- Python 3.10+ (recommended)
+- pip / venv
 
-### 1. Doubly Linked List (DLL)
-**Digunakan pada:** Library Lagu Utama (`song_library`).
+### Setup & Run
+```bash
+# 1) create env
+python -m venv .venv
 
-**Alasan:** Memungkinkan penelusuran lagu (*Traversal*) dua arah (`Next` dan `Previous`) dengan efisien. Operasi penambahan lagu di akhir list memiliki kompleksitas waktu **O(1)** karena penggunaan *tail pointer*.
+# 2) activate env (Windows)
+.venv\Scripts\activate
 
-**Implementasi Code (Python - `music_service.py`):**
-```python
-# Menambahkan lagu ke Linked List
-def add_song(library: DoublyLinkedSongList, data: dict) -> Song:
-    # ... pembuatan objek song ...
-    
-    # Append ke Doubly Linked List 
-    # O(1) karena menggunakan pointer tail
-    library.append(song) 
-    return song
+# 3) install deps
+pip install -r requirements.txt
 
-# Update lagu (Traversal O(n) untuk pencarian, O(1) untuk update node)
-def update_song(library: DoublyLinkedSongList, song_id: int, data: dict) -> bool:
-    success = library.update_song(int(song_id), **fields)
-    return success
+# 4) run (option A)
+python app.py
 
+# or run (option B - flask cli)
+flask --app app.py --debug run
 ```
 
-###2. Queue (Singly Linked List)**Digunakan pada:** Antrean Pemutaran (*Playback Queue*) dan Playlist User.
+Open:
+- `http://127.0.0.1:5000`
 
-**Alasan:** Sifat pemutaran musik adalah **FIFO (First-In-First-Out)** atau linear. Singly Linked List cukup efisien untuk operasi *enqueue* (tambah antrean) dan traversal satu arah.
+---
 
-**Implementasi Code (Python - `playlist_service.py`):**
+## 🗂 Project Structure
 
+Contoh struktur folder yang rapi untuk GitHub:
+
+```text
+structify-music/
+├─ app.py
+├─ models.py
+├─ services/
+│  ├─ player_service.py
+│  ├─ playlist_service.py
+│  └─ music_service.py
+├─ repository/
+│  └─ songs_repository.py
+├─ data/
+│  └─ songs.csv
+├─ static/
+│  ├─ audio/
+│  ├─ covers/
+│  ├─ css/
+│  │  └─ style.css
+│  └─ js/
+│     └─ app.js
+├─ templates/
+│  ├─ base.html
+│  ├─ guest_dashboard.html
+│  ├─ gatau.html
+│  ├─ search_results.html
+│  ├─ auth_login.html
+│  └─ auth_register.html
+├─ requirements.txt
+└─ README.md
+```
+
+---
+
+## 🏗️ Architecture & Storage
+
+Structify Music memakai **Hybrid Storage**: relasional untuk entitas yang butuh integritas relasi + file-based untuk simulasi library lagu seperti sistem legacy.
+
+### 1) Relational Database (SQLite)
+Untuk data dengan relasi kuat & integritas data.
+- Implementasi: `Flask-SQLAlchemy`
+- Entitas: `Album`, `Artist`, `PublicPlaylist` (Playlist Admin)
+- Default file: `vibestream.db`
+
+### 2) File-Based Storage (CSV)
+Simulasi repository lagu utama (flat-file).
+- Implementasi: modul `csv` Python
+- Isi: metadata lagu (judul, artis, genre, path audio, cover, key Nayara, dll.)
+- File: `data/songs.csv`
+
+### 3) Static File System
+Aset media fisik yang diakses langsung oleh browser.
+- Audio: `static/audio/` (`.mp3`)
+- Cover: `static/covers/` (`.jpg`/`.png`)
+
+### 4) Client-Side Storage (LocalStorage)
+Penyimpanan preferensi & playlist pribadi di browser (ringan, cepat, tanpa beban server untuk state sementara).
+- Contoh key: `userPlaylists`, `musicHistory`, `vibestream_saved_collection`
+
+---
+
+## 🧠 Algorithms & Data Structures
+
+### 1) Doubly Linked List (DLL)
+**Dipakai untuk:** Library Lagu Utama (`song_library`)
+
+**Kenapa:** traversal dua arah (`next`/`prev`) efisien. Append O(1) karena ada *tail pointer*.
+
+**Contoh (Python — `music_service.py`):**
 ```python
-# Menambah lagu ke antrean
-def add_to_queue(library: DoublyLinkedSongList, queue: Playlist, song_id: int) -> bool:
+def add_song(library, data: dict):
+    # ... create Song object ...
+    # Append O(1) karena tail pointer
+    library.append(song)
+    return song
+
+def update_song(library, song_id: int, data: dict) -> bool:
+    # Search O(n), update node O(1)
+    return library.update_song(int(song_id), **data)
+```
+
+---
+
+### 2) Queue (Singly Linked List)
+**Dipakai untuk:** Antrean pemutaran (*Playback Queue*) & playlist user
+
+**Kenapa:** pemutaran bersifat FIFO. Enqueue/dequeue efisien.
+
+**Contoh (Python — `playlist_service.py`):**
+```python
+def add_to_queue(library, queue, song_id: int) -> bool:
     node = library.find_by_id(int(song_id))
     if node is None:
         return False
-    
-    # Enqueue ke Queue (Menambah di ekor)
-    queue.enqueue(node.song) 
+    queue.enqueue(node.song)  # add to tail
     return True
-
 ```
 
-###3. Levenshtein Distance (String Matching Algorithm)**Digunakan pada:** Fitur *Smart Search* (Pencarian).
+---
 
-**Alasan:** Memberikan toleransi terhadap kesalahan ketik (*typo*). Algoritma ini menghitung jumlah minimal operasi (insert, delete, replace) yang dibutuhkan untuk mengubah satu string menjadi string lain.
+### 3) Levenshtein Distance (String Matching)
+**Dipakai untuk:** Smart Search (toleran typo)
 
-**Implementasi Code (Python - `music_service.py`):**
+**Kenapa:** menghitung jarak edit minimal (insert/delete/replace) agar hasil tetap relevan walau salah ketik.
 
+**Contoh (Python — `music_service.py`):**
 ```python
 def levenshtein_distance(s1, s2):
     if len(s1) < len(s2):
         return levenshtein_distance(s2, s1)
-    
     if len(s2) == 0:
         return len(s1)
-    
+
     previous_row = range(len(s2) + 1)
     for i, c1 in enumerate(s1):
         current_row = [i + 1]
@@ -105,67 +168,96 @@ def levenshtein_distance(s1, s2):
             substitutions = previous_row[j] + (c1 != c2)
             current_row.append(min(insertions, deletions, substitutions))
         previous_row = current_row
-    
-    return previous_row[-1]
 
+    return previous_row[-1]
 ```
 
-###4. Graph-Based Logic / Weighted Heuristic**Digunakan pada:** Sistem Rekomendasi (*Auto Next*).
+---
 
-**Alasan:** Menentukan lagu selanjutnya bukan berdasarkan urutan ID, melainkan berdasarkan bobot kedekatan atribut ("Edge Weight"). Lagu dianggap "tetangga" jika memiliki kesamaan atribut.
+### 4) Weighted Heuristic (Graph-Like Recommendation)
+**Dipakai untuk:** Auto Next / rekomendasi lagu
 
-* **Artist Sama:** Bobot +5
-* **Genre Sama:** Bobot +3
+**Konsep:** lagu jadi “tetangga” jika punya atribut sama, diberi bobot (*edge weight*).
+- Artist sama: +5
+- Genre sama: +3
 
-**Implementasi Code (Python - `app.py`):**
-
+**Contoh (Python — `app.py`):**
 ```python
 @app.route('/api/recommend/<song_id>')
 def recommend_song(song_id):
     candidates = []
-    # Iterasi untuk mencari tetangga yang relevan
     for song in all_songs_data:
-        if str(song['id']) == str(song_id): continue
-            
+        if str(song["id"]) == str(song_id):
+            continue
+
         weight = 0
-        # Memberikan bobot jika memiliki atribut yang sama (Edge creation)
-        if song.get('artist') == current_song.get('artist'): weight += 5
-        if song.get('genre') and song.get('genre') == current_song.get('genre'): weight += 3
-            
-        if weight > 0: candidates.append(song)
-    
-    # Memilih acak dari kandidat yang memiliki bobot (koneksi graph)
+        if song.get("artist") == current_song.get("artist"):
+            weight += 5
+        if song.get("genre") and song.get("genre") == current_song.get("genre"):
+            weight += 3
+
+        if weight > 0:
+            candidates.append(song)
+
     if candidates:
         next_song = random.choice(candidates)
-        # ... return song
-
+        # ... return serialized song ...
 ```
 
 ---
 
-##✨ Fitur Utama###1. Manajemen Akses (Role-Based)* **Guest:** Akses terbatas untuk browsing dan pencarian lagu.
-* **User:** Akses penuh untuk membuat playlist pribadi, memutar lagu, dan menyimpan ke koleksi.
-* **Admin:** Dashboard khusus untuk operasi CRUD (Create, Read, Update, Delete) pada Lagu, Album, dan Artis.
+## ✨ Key Features
 
-###2. Music Player Canggih* **Kontrol Penuh:** Play, Pause, Next (Smart/Queue), Prev (History/Restart), Shuffle, Loop.
-* **Visualizer 3D (Nayara Stage):** Integrasi `model-viewer` dengan Web Audio API untuk visualisasi 3D yang bereaksi terhadap *beat/bass* musik secara real-time.
-* **Lirik Otomatis:** Fitur parsing file `.lrc` untuk menampilkan lirik yang sinkron dengan waktu lagu.
+### 1) Role-Based Access
+- **Guest:** browsing & search terbatas
+- **User:** playlist pribadi, queue, koleksi
+- **Admin:** dashboard CRUD (lagu/album/artis)
 
-###3. Manajemen Playlist (Premium)* **LocalStorage System:** Playlist User disimpan di browser, memungkinkan manajemen state yang cepat tanpa *round-trip* ke server database setiap saat.
-* **UI Glassmorphism:** Tampilan modern dengan efek blur dan transparansi.
-* **Validasi:** Mencegah duplikasi lagu dalam satu playlist.
+### 2) Advanced Music Player
+- Kontrol: play, pause, next (smart/queue), prev, shuffle, loop
+- **Nayara Stage (3D):** integrasi `model-viewer` + Web Audio API untuk visualisasi reaktif audio
+- (Opsional) Lirik `.lrc` sinkron waktu jika tersedia
 
-###4. Smart Search System* **Instant Search:** Hasil pencarian muncul seketika saat mengetik (AJAX Fetch).
-* **Kategorisasi:** Hasil dipisah secara cerdas berdasarkan Lagu, Artis, Album, dan Playlist.
-* **Typo Tolerance:** Menggunakan algoritma Levenshtein agar pengguna tetap menemukan lagu meski salah ketik.
+### 3) Playlist Management (Premium / User)
+- Playlist user via LocalStorage (cepat, ringan)
+- Validasi anti-duplikasi lagu
+- UI modern (glassmorphism)
+
+### 4) Smart Search
+- Instant search (AJAX fetch)
+- Kategorisasi hasil (lagu / artis / album / playlist)
+- Typo tolerance (Levenshtein)
 
 ---
 
-##🛠️ Teknologi* **Backend:** Python, Flask, SQLAlchemy.
-* **Frontend:** HTML5, CSS3 (Glassmorphism), Vanilla JavaScript (SPA Logic).
-* **Database:** SQLite, CSV.
-* **Media:** Web Audio API, Google Model Viewer.
+## 🔌 API Overview
 
-```
+> Catatan: nama endpoint bisa menyesuaikan implementasi kamu — ini format yang umum dari project-mu.
 
-```
+- `GET /api/next/<id>` → lagu berikutnya (smart next / queue mode)
+- `GET /api/prev/<id>` → lagu sebelumnya
+- `GET /api/playlist` → ambil isi queue
+- `POST /api/playlist/add` → tambah ke queue
+- `POST /api/playlist/remove` → hapus dari queue
+- `POST /api/playlist/clear` → bersihkan queue
+- `GET /api/playlists` → daftar playlist user
+- `POST /api/playlists/create` → buat playlist
+- `POST /api/playlists/<name>/add` → tambah lagu ke playlist
+- `POST /api/playlists/<name>/remove` → hapus lagu dari playlist
+- `POST /api/playlists/<name>/clear` → clear playlist
+- `DELETE /api/playlists/<name>` → hapus playlist
+
+---
+
+## 🛠 Tech Stack
+- Backend: Python, Flask, SQLAlchemy
+- Frontend: HTML5, CSS3, Vanilla JS
+- Storage: SQLite + CSV
+- Media: Web Audio API, `model-viewer`
+
+---
+
+### ✅ Notes (untuk GitHub)
+- Pastikan `data/songs.csv` ada (minimal 1 baris data) biar app tidak error saat load.
+- Pastikan file audio & cover yang direferensikan di CSV memang ada di folder `static/`.
+
