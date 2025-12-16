@@ -1,48 +1,50 @@
-# PRESENTASI
+# 🎵 Structify Music - Technical Documentation
 
-# 🎵 VibeStream - Technical Documentation
+**Structify Music** adalah aplikasi pemutar musik modern berbasis web yang dirancang untuk memenuhi tugas besar mata kuliah Struktur Data. Aplikasi ini menggabungkan struktur data klasik (Linked List, Queue) dengan antarmuka pengguna yang interaktif dan fitur cerdas.
 
-**VibeStream** adalah aplikasi pemutar musik modern berbasis web yang menggabungkan struktur data klasik dengan antarmuka pengguna yang interaktif. Dokumen ini menjelaskan arsitektur teknis, mekanisme penyimpanan, serta algoritma yang digunakan dalam pengembangan aplikasi.
+Dokumen ini menjelaskan arsitektur teknis, mekanisme penyimpanan, serta algoritma yang digunakan dalam pengembangan aplikasi.
+
+---
 
 ## 🏗️ Arsitektur & Penyimpanan (Storage)
 
-VibeStream menggunakan pendekatan **Hybrid Storage** untuk mengoptimalkan kinerja antara manajemen data relasional yang kompleks dan kecepatan akses file.
+Structify Music menggunakan pendekatan **Hybrid Storage** untuk menyeimbangkan kebutuhan integritas data relasional dan efisiensi operasi file.
 
 ### 1. Database Relasional (SQLite)
-Digunakan untuk data yang memerlukan integritas tinggi dan relasi antar entitas.
-* **Implementasi:** Flask-SQLAlchemy.
-* **Data:** `Album`, `Artist`, `PublicPlaylist`.
-* **File:** `vibestream.db`.
+Digunakan untuk data entitas yang memerlukan relasi kuat dan integritas data.
+* **Implementasi:** `Flask-SQLAlchemy`
+* **Data:** `Album`, `Artist`, `PublicPlaylist` (Playlist Admin)
+* **File:** `vibestream.db` *(Default configuration)*
 
 ### 2. File-Based Storage (CSV)
 Digunakan sebagai simulasi *repository* file untuk Library Lagu utama, meniru sistem *legacy* atau pengelolaan file datar.
-* **Implementasi:** Modul `csv` Python.
-* **Data:** Metadata Lagu (Judul, Artis, Genre, File Path).
-* **File:** `data/songs.csv`.
+* **Implementasi:** Modul `csv` Python
+* **Data:** Metadata Lagu (Judul, Artis, Genre, File Path, Nayara Key)
+* **File:** `data/songs.csv`
 
 ### 3. Static File System
-Penyimpanan aset media fisik.
+Penyimpanan aset media fisik yang diakses langsung oleh browser.
 * **Audio:** `static/audio/` (.mp3)
 * **Covers:** `static/covers/` (.jpg/.png)
 
 ### 4. Client-Side Storage (LocalStorage)
-Digunakan untuk menyimpan preferensi pengguna dan playlist pribadi tanpa membebani server database untuk sesi sementara.
-* **Data:** `userPlaylists`, `musicHistory` (Riwayat putar), `vibestream_saved_collection`.
+Digunakan untuk menyimpan preferensi pengguna dan playlist pribadi secara lokal di browser pengguna (tanpa membebani server database untuk sesi sementara).
+* **Data:** `userPlaylists` (Playlist User), `musicHistory` (Riwayat putar), `vibestream_saved_collection`.
 
 ---
 
 ## 🧠 Algoritma & Struktur Data
 
-Inti dari VibeStream adalah penerapan struktur data yang efisien untuk menangani operasi pemutar musik.
+Inti dari Structify Music adalah penerapan struktur data yang efisien untuk menangani operasi pemutar musik.
 
 ### 1. Doubly Linked List (DLL)
 **Digunakan pada:** Library Lagu Utama (`song_library`).
 
-**Alasan:** Memungkinkan penelusuran lagu (Traversal) dua arah (`Next` dan `Previous`) dengan efisien. Operasi penambahan lagu di akhir list memiliki kompleksitas waktu **O(1)** karena penggunaan *tail pointer*.
+**Alasan:** Memungkinkan penelusuran lagu (*Traversal*) dua arah (`Next` dan `Previous`) dengan efisien. Operasi penambahan lagu di akhir list memiliki kompleksitas waktu **O(1)** karena penggunaan *tail pointer*.
 
-**Implementasi Code (Python):**
+**Implementasi Code (Python - `music_service.py`):**
 ```python
-# Menambahkan lagu ke Linked List (music_service.py)
+# Menambahkan lagu ke Linked List
 def add_song(library: DoublyLinkedSongList, data: dict) -> Song:
     # ... pembuatan objek song ...
     
@@ -51,7 +53,7 @@ def add_song(library: DoublyLinkedSongList, data: dict) -> Song:
     library.append(song) 
     return song
 
-# Update lagu (Traversal O(n))
+# Update lagu (Traversal O(n) untuk pencarian, O(1) untuk update node)
 def update_song(library: DoublyLinkedSongList, song_id: int, data: dict) -> bool:
     success = library.update_song(int(song_id), **fields)
     return success
